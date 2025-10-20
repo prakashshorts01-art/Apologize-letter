@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Handwritten Letter Just For You</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            font-family: 'Georgia', serif;
+            perspective: 1500px; /* For the 3D flip effect */
+            overflow: hidden; /* Prevent scrollbars due to 3D transform */
+        }
+        .book {
+            width: 700px; /* Adjust this to match your image width */
+            height: 900px; /* Adjust this to match your image height */
+            position: relative;
+            transform-style: preserve-3d;
+        }
+        .page {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: #fffaf0; /* Fallback if image fails to load */
+            border: 1px solid #ccc;
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2);
+            backface-visibility: hidden;
+            transform-origin: left;
+            transition: transform 1.2s; /* Slower, more elegant flip */
+            overflow: hidden;
+            
+            /* Image specific styles */
+            background-size: cover; /* Cover the entire page area */
+            background-position: center; /* Center the image */
+            background-repeat: no-repeat; /* Don't repeat the image */
+        }
+        /* Z-index for stacking order of pages */
+        .page:not(.flipped) {
+            z-index: 10;
+        }
+        /* Assign higher z-index to pages that are further "back" in the stack */
+        #page-0 { z-index: 15; /* Cover page on top */ }
+        #page-1 { z-index: 14; }
+        #page-2 { z-index: 13; }
+        #page-3 { z-index: 12; }
+        #page-4 { z-index: 11; }
+        #page-5 { z-index: 10; }
+
+
+        .page.flipped {
+            transform: rotateY(-180deg);
+        }
+        
+        /* Specific image backgrounds for each page */
+        #page-0 { background-image: url('greeting_apology.jpg'); } /* YOUR IMAGE */
+        #page-1 { background-image: url('page1.jpg'); } /* YOUR IMAGE */
+        #page-2 { background-image: url('page2.jpg'); } /* YOUR IMAGE */
+        #page-3 { background-image: url('page3.jpg'); } /* YOUR IMAGE */
+        #page-4 { background-image: url('page4.jpg'); } /* YOUR IMAGE */
+        #page-5 { background-image: url('page5.jpg'); } /* YOUR IMAGE */
+
+
+        .button-container {
+            position: absolute;
+            bottom: 20px;
+            right: calc(50% - 70px); /* Center below the book */
+            z-index: 20; /* Make sure button is on top */
+        }
+        .flip-button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #a34612; /* A more rustic button color */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s, transform 0.1s;
+            font-family: 'Georgia', serif;
+            letter-spacing: 0.5px;
+        }
+        .flip-button:hover {
+            background-color: #8c3b0d;
+            transform: translateY(-2px);
+        }
+        .flip-button:active {
+            transform: translateY(1px);
+        }
+
+        /* Styling for the first page text overlay - if you decide to keep it */
+        /* If your greeting image is self-sufficient, you can remove this */
+        #page-0 .overlay-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #333; /* Dark text over your greeting image */
+            text-align: center;
+            font-family: 'Great Vibes', cursive; /* A nice script font */
+            font-size: 2.5em;
+            text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.7); /* Light shadow for readability */
+            pointer-events: none; /* So button clicks pass through */
+            line-height: 1.2;
+            width: 80%;
+            box-sizing: border-box;
+        }
+        #page-0 .overlay-text p {
+            font-family: 'Georgia', serif; /* Simpler font for instructions */
+            font-size: 0.6em;
+            color: #555;
+            margin-top: 20px;
+            text-shadow: none;
+        }
+
+        /* Ensure Google Fonts are imported if you're using overlay text */
+        @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+    </style>
+</head>
+<body>
+
+    <audio id="background-music" loop autoplay>
+        <source src="your_song.mp3" type="audio/mpeg"> Your browser does not support the audio element.
+    </audio>
+
+    <div class="book">
+        <div class="page" id="page-0">
+            <div class="overlay-text">
+                <h1>My Dearest Love,</h1>
+                <p>Please click 'Next Page' to turn and read my heart.</p>
+            </div>
+        </div>
+
+        <div class="page" id="page-1"></div>
+
+        <div class="page" id="page-2"></div>
+
+        <div class="page" id="page-3"></div>
+
+        <div class="page" id="page-4"></div>
+
+        <div class="page" id="page-5"></div>
+    </div>
+
+    <div class="button-container">
+        <button class="flip-button" id="flip-button">Next Page &gt;</button>
+    </div>
+
+    <script>
+        const pages = document.querySelectorAll('.page');
+        const flipButton = document.getElementById('flip-button');
+        const music = document.getElementById('background-music');
+        let currentPageIndex = 0; // Starts at 0 for page-0 (greeting)
+
+        // Function to start music on user interaction
+        function startMusic() {
+            music.play().catch(error => {
+                console.log("Autoplay was prevented. User will need to interact with the page first.", error);
+            });
+            document.removeEventListener('click', startMusic);
+            document.removeEventListener('keydown', startMusic);
+        }
+
+        // Many browsers require a user action (like a click) to play audio
+        document.addEventListener('click', startMusic, { once: true });
+        document.addEventListener('keydown', startMusic, { once: true });
+
+
+        flipButton.addEventListener('click', () => {
+            if (currentPageIndex < pages.length -1) { // -1 because we flip the current page to reveal the next
+                // Attempt to play music again if it paused or didn't start
+                if (music.paused) {
+                    music.play().catch(e => console.log("Music play attempt failed after button click:", e));
+                }
+                
+                // Flip the current page
+                pages[currentPageIndex].classList.add('flipped');
+
+                // Move to the next page for the *next* click
+                currentPageIndex++;
+
+                // If we've just flipped the last page, hide the button
+                if (currentPageIndex === pages.length - 1) { // Check if we are now on the LAST page
+                    flipButton.textContent = 'End of Letter';
+                    flipButton.disabled = true; // Disable button
+                    flipButton.style.opacity = '0.7';
+                    flipButton.style.cursor = 'default';
+                }
+            }
+        });
+
+        // Initial setup for z-index (stacking order)
+        pages.forEach((page, index) => {
+             // Assign z-index in reverse for stacking
+             page.style.zIndex = pages.length - index;
+        });
+    </script>
+
+</body>
+</html>
